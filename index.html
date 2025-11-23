@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Game Launcher</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #eee;
+      font-family: sans-serif;
+    }
+    #menu {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0,0,0,0.7);
+      padding: 10px;
+      border-radius: 6px;
+      z-index: 1000;
+    }
+    #mapSelector {
+      margin-right: 10px;
+    }
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0; left: 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Меню выбора карты -->
+  <div id="menu">
+    <select id="mapSelector"></select>
+    <button onclick="startGame()">Запуск</button>
+  </div>
+
+  <!-- Игровые канвасы -->
+  <canvas id="glcanvas"></canvas>
+  <canvas id="hudcanvas"></canvas>
+
+  <!-- Скрипты движка -->
+  <script src="core/math3d.js"></script>
+  <script src="core/physics.js"></script>
+  <script src="core/map_registry.js"></script>
+  <script src="core/renderer.js"></script>
+  <script src="core/assets.js"></script>
+  <script src="core/hud.js"></script>
+  <script src="core/input.js"></script>
+  <script src="core/player.js"></script>
+  <script src="core/game.js"></script>
+
+  <!-- Логика выбора карты -->
+  <script src="index.js"></script>
+</body>
+</html>

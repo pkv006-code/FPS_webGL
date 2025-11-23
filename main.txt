@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <title>Top FPS Prototype</title>
+
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+        }
+
+        /* === ВАЖНО: правильные id === */
+        #glcanvas, #hudcanvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #hudcanvas {
+            pointer-events: none; /* HUD не перехватывает мышь */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- === WebGL Canvas === -->
+    <canvas id="glcanvas"></canvas>
+
+    <!-- === HUD Canvas (2D) === -->
+    <canvas id="hudcanvas"></canvas>
+
+    <!-- ===== Engine Core ===== -->
+    <script>
+        console.log('[index] start: подключаем core-скрипты');
+    </script>
+
+    <script src="core/math3d.js"></script>
+    <script src="core/shaders.js"></script>
+    <script src="core/renderer.js"></script>
+    <script src="core/physics.js"></script>
+
+    <!-- ===== Gameplay: Input → Player → Map → HUD ===== -->
+    <script src="core/input.js"></script>
+    <script src="core/player.js"></script>
+    <script src="core/map_registry.js"></script>
+
+    <!-- Карты -->
+    <script src="maps/arena_grass/map.js"></script>
+
+    <script src="core/hud.js"></script>
+
+    <!-- ===== Assets (textures) ===== -->
+    <script src="core/assets.js"></script>
+
+    <!-- ===== Main game loop ===== -->
+    <script src="core/game.js"></script>
+
+    <!-- ===== Bootstrap / Логи ===== -->
+    <script>
+        console.log('[index] все скрипты подключены, ставим обработчики');
+
+        // Ловим все ошибки
+        window.addEventListener('error', function (e) {
+            console.error('[index] Uncaught error:', e.message,
+                'at', e.filename + ':' + e.lineno + ':' + e.colno);
+        });
+
+        window.addEventListener('load', function () {
+            console.log('[index] window.onload: пробуем вызвать initGame()');
+            if (typeof initGame === 'function') {
+                try {
+                    console.log('[index] initGame() найден, запускаю…');
+                    initGame();  // <-- весь запуск игры здесь
+                } catch (err) {
+                    console.error('[index] initGame() выбросил исключение:', err);
+                }
+            } else {
+                console.error('[index] initGame не функция, typeof =', typeof initGame);
+            }
+        });
+    </script>
+
+</body>
+</html>

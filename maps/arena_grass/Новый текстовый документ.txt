@@ -1,0 +1,145 @@
+'use strict';
+
+// ==========================================
+// Карта: arena_grass
+// Патч 5.1: карта сама задаёт свою текстуру пола
+// ==========================================
+
+// Диапазон вершин, которые отбрасывают тень (заполняется в buildLevelGeometry)
+let LEVEL_SHADOW_START = 0;
+let LEVEL_SHADOW_COUNT = 0;
+
+// Коллайдеры уровня (пока только кубы, по XZ)
+let LEVEL_COLLIDERS = [];
+
+// ================== НАСТРОЙКИ КАРТЫ ==================
+
+// путь к текстуре пола именно для ЭТОЙ карты
+if (typeof Assets !== 'undefined' && Assets.setFloorTexturePath) {
+    Assets.setFloorTexturePath('maps/arena_grass/textures/floor_diffuse.png');
+} else {
+    console.warn('[arena_grass] Assets.setFloorTexturePath недоступен');
+}
+
+// ================== ГЕОМЕТРИЯ УРОВНЯ =================
+
+// buildLevelGeometry заполняет:
+// verts  – позиции (x,y,z)
+// cols   – цвета (r,g,b)
+// norms  – нормали (nx,ny,nz)
+function buildLevelGeometry(verts, cols, norms) {
+    const floorSize  = 80;
+    const wallHeight = 6;
+
+    // очищаем список коллайдеров при пересборке геометрии
+    LEVEL_COLLIDERS = [];
+
+    // ---------- ПОЛ (умеренно-зелёный, нормаль вверх) ----------
+    const floorVerts = [
+        -floorSize, 0, -floorSize,
+         floorSize, 0, -floorSize,
+         floorSize, 0,  floorSize,
+
+        -floorSize, 0, -floorSize,
+         floorSize, 0,  floorSize,
+        -floorSize, 0,  floorSize
+    ];
+    verts.push(...floorVerts);
+
+    for (let i = 0; i < 6; i++) {
+        norms.push(0, 1, 0);              // нормаль вверх
+        // цвет травы (как fallback, когда текстура не подгружена)
+        cols.push(0.05, 0.40, 0.12);
+    }
+
+    // ---------- СТЕНЫ (светло-серые) ----------
+    function addWall(x1, z1, x2, z2) {
+        const wall = [
+            x1, 0, z1,   x2, 0, z2,   x2, wallHeight, z2,
+            x1, 0, z1,   x2, wallHeight, z2,   x1, wallHeight, z1
+        ];
+        verts.push(...wall);
+
+        const dx = x2 - x1;
+        const dz = z2 - z1;
+
+        // нормаль наружу
+        let nx = -dz;
+        let nz = dx;
+        const len = Math.hypot(nx, nz) || 1.0;
+        nx /= len;
+        nz /= len;
+
+        for (let i = 0; i < 6; i++) {
+            norms.push(nx, 0, nz);
+            cols.push(0.8, 0.8, 0.85);
+        }
+    }
+
+    addWall(-floorSize, -floorSize,  floorSize, -floorSize);
+    addWall( floorSize, -floorSize,  floorSize,  floorSize);
+    addWall( floorSize,  floorSize, -floorSize,  floorSize);
+    addWall(-floorSize,  floorSize, -floorSize, -floorSize);
+
+    // ---- с этого индекса начинаются объекты, которые отбрасывают тень (кубы) ----
+    LEVEL_SHADOW_START = verts.length / 3;
+
+    // ---------- КУБЫ (серые) ----------
+    function addCube(cx, cy, cz, s = 2) {
+        const a = s / 2;
+
+        const v = [
+            // Front (0,0,1)
+            cx-a,cy-a,cz+a, cx+a,cy-a,cz+a, cx+a,cy+a,cz+a,
+            cx-a,cy-a,cz+a, cx+a,cy+a,cz+a, cx-a,cy+a,cz+a,
+            // Back (0,0,-1)
+            cx-a,cy-a,cz-a, cx+a,cy-a,cz-a, cx+a,cy+a,cz-a,
+            cx-a,cy-a,cz-a, cx+a,cy+a,cz-a, cx-a,cy+a,cz-a,
+            // Left (-1,0,0)
+            cx-a,cy-a,cz-a, cx-a,cy-a,cz+a, cx-a,cy+a,cz+a,
+            cx-a,cy-a,cz-a, cx-a,cy+a,cz+a, cx-a,cy+a,cz-a,
+            // Right (1,0,0)
+            cx+a,cy-a,cz-a, cx+a,cy-a,cz+a, cx+a,cy+a,cz+a,
+            cx+a,cy-a,cz-a, cx+a,cy+a,cz+a, cx+a,cy+a,cz-a,
+            // Top (0,1,0)
+            cx-a,cy+a,cz-a, cx+a,cy+a,cz-a, cx+a,cy+a,cz+a,
+            cx-a,cy+a,cz-a, cx+a,cy+a,cz+a, cx-a,cy+a,cz+a,
+            // Bottom (0,-1,0)
+            cx-a,cy-a,cz-a, cx+a,cy-a,cz-a, cx+a,cy-a,cz+a,
+            cx-a,cy-a,cz-a, cx+a,cy-a,cz+a, cx-a,cy-a,cz+a
+        ];
+
+        verts.push(...v);
+
+        const n = [];
+        for (let i = 0; i < 6; i++) n.push(0, 0,  1);
+        for (let i = 0; i < 6; i++) n.push(0, 0, -1);
+        for (let i = 0; i < 6; i++) n.push(-1, 0, 0);
+        for (let i = 0; i < 6; i++) n.push( 1, 0, 0);
+        for (let i = 0; i < 6; i++) n.push(0, 1, 0);
+        for (let i = 0; i < 6; i++) n.push(0,-1, 0);
+
+        norms.push(...n);
+
+        for (let i = 0; i < 36; i++) {
+            cols.push(0.7, 0.7, 0.75);
+        }
+
+        // AABB-коллайдер куба (по XZ)
+        LEVEL_COLLIDERS.push({
+            xMin: cx - a,
+            xMax: cx + a,
+            zMin: cz - a,
+            zMax: cz + a
+        });
+    }
+
+    // примеры кубов
+    addCube(0,   1,   0,   3);
+    addCube(10,  1,   5,   3);
+    addCube(-12, 1,  -6,   3);
+    addCube(15,  1, -14,   3);
+
+    // количество вершин, отбрасывающих тень
+    LEVEL_SHADOW_COUNT = (verts.length / 3) - LEVEL_SHADOW_START;
+}
